@@ -8,10 +8,16 @@ import withStyles from '../styles/withStyles';
 
 const THICKNESS = 3.6;
 const PI = 3.1416; // Simple version of Math.PI for the CSS generated.
+const TMP_SIZE = 50;
 
 function getRelativeValue(value, min, max) {
   const clampedValue = Math.min(Math.max(min, value), max);
   return (clampedValue - min) / (max - min);
+}
+
+function calcFallback(progress, size, negative) {
+  const result = (progress * size / 100 - THICKNESS) * PI;
+  return negative ? result * -1 : result;
 }
 
 export const styleSheet = createStyleSheet('MuiCircularProgress', theme => ({
@@ -32,7 +38,7 @@ export const styleSheet = createStyleSheet('MuiCircularProgress', theme => ({
     transition: theme.transitions.create('all', { duration: 1300 }),
   },
   indeterminateCircle: {
-    strokeDasharray: `1, calc((100% - ${THICKNESS}px) * ${PI})`,
+    strokeDasharray: `1, ${calcFallback(100, TMP_SIZE)}`,
     strokeDashoffset: '0%',
     animation: `mui-scale-progress-circle 1300ms ${theme.transitions.easing.easeInOut} infinite`,
   },
@@ -50,18 +56,18 @@ export const styleSheet = createStyleSheet('MuiCircularProgress', theme => ({
   },
   '@keyframes mui-scale-progress-circle': {
     '8%': {
-      strokeDasharray: `1, calc((100% - ${THICKNESS}px) * ${PI})`,
+      strokeDasharray: `1, ${calcFallback(100, TMP_SIZE)}`,
       strokeDashoffset: 0,
     },
     '50%, 58%': {
       // eslint-disable-next-line max-len
-      strokeDasharray: `calc((65% - ${THICKNESS}px) * ${PI}), calc((100% - ${THICKNESS}px) * ${PI})`,
-      strokeDashoffset: `calc((25% - ${THICKNESS}px) * -${PI})`,
+      strokeDasharray: `${calcFallback(65, TMP_SIZE)}, ${calcFallback(100, TMP_SIZE)}`,
+      strokeDashoffset: `${calcFallback(25, TMP_SIZE, true)}`,
     },
     '100%': {
       // eslint-disable-next-line max-len
-      strokeDasharray: `calc((65% - ${THICKNESS}px) * ${PI}), calc((100% - ${THICKNESS}px) * ${PI})`,
-      strokeDashoffset: `calc((99% - ${THICKNESS}px) * -${PI})`,
+      strokeDasharray: `${calcFallback(65, TMP_SIZE)}, ${calcFallback(100, TMP_SIZE)}`,
+      strokeDashoffset: `${calcFallback(99, TMP_SIZE, true)}`,
     },
   },
 }));
@@ -82,9 +88,10 @@ function CircularProgress(props) {
   const circleStyle = {};
   if (mode === 'determinate') {
     const relVal = getRelativeValue(value, min, max);
+
     circleStyle.strokeDasharray =
-      `calc(((100% - ${THICKNESS}px) * ${PI}) * ${relVal}),` +
-      `calc((100% - ${THICKNESS}px) * ${PI})`;
+      (calcFallback(100, TMP_SIZE) * relVal).toString() + ',' + calcFallback(100, TMP_SIZE).toString();
+
     rootProps['aria-valuenow'] = value;
     rootProps['aria-valuemin'] = min;
     rootProps['aria-valuemax'] = max;
